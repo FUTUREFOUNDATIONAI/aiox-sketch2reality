@@ -21,13 +21,21 @@ try {
 import { createStitchClient } from './stitch-client.js';
 import { extractHtml, getStoredHtml } from './html-extractor.js';
 import { createVercelDeployer } from './vercel-deployer.js';
+import { analyzeSketch, buildPromptFromAnalysis } from './sketch-analyzer.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Config from env
-const STITCH_API_KEY = process.env.STITCH_API_KEY || 'REDACTED_STITCH_KEY_2';
-const PROJECT_ID = process.env.STITCH_PROJECT_ID || '6851128296893269757';
+// Config from env — NEVER hardcode API keys
+const STITCH_API_KEY = process.env.STITCH_API_KEY;
+const PROJECT_ID = process.env.STITCH_PROJECT_ID;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const PORT = process.env.PORT || 3777;
+
+if (!STITCH_API_KEY || !PROJECT_ID) {
+  console.error('Missing required environment variables: STITCH_API_KEY, STITCH_PROJECT_ID');
+  console.error('Copy .env.example to .env and fill in your values.');
+  process.exit(1);
+}
 
 const stitch = createStitchClient(STITCH_API_KEY, PROJECT_ID);
 const vercel = createVercelDeployer({
@@ -71,19 +79,43 @@ app.get('/api/health', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    res.json({ status: 'error', error: err.message, vercel: vercel.configured ? 'ok' : 'not_configured' });
+    console.error('[HEALTH ERROR]', err.message);
+    res.json({ status: 'error', error: 'Health check failed', vercel: vercel.configured ? 'ok' : 'not_configured' });
   }
 });
 
-// --- Full Pipeline: Generate → Extract HTML → Deploy ---
+// --- Full Pipeline: Analyze Sketch → Generate → Extract HTML → Deploy ---
 app.post('/api/generate', upload.single('sketch'), async (req, res) => {
   try {
-    const userPrompt = req.body.prompt || '';
-    const prompt = userPrompt ? `${BRANDING_PROMPT}\n\nADDITIONAL: ${userPrompt}` : BRANDING_PROMPT;
-    const deviceType = req.body.deviceType || 'DESKTOP';
-    const modelId = req.body.modelId || 'GEMINI_3_FLASH';
+    const userPrompt = typeof req.body.prompt === 'string' ? req.body.prompt.slice(0, 2000) : '';
+    const allowedDevices = ['DESKTOP', 'MOBILE', 'TABLET'];
+    const allowedModels = ['GEMINI_3_FLASH', 'GEMINI_3_PRO'];
+    const deviceType = allowedDevices.includes(req.body.deviceType) ? req.body.deviceType : 'DESKTOP';
+    const modelId = allowedModels.includes(req.body.modelId) ? req.body.modelId : 'GEMINI_3_FLASH';
 
-    console.log(`[GENERATE] device=${deviceType} model=${modelId}`);
+    // Stage 0: Analyze sketch image with Gemini Vision (if uploaded)
+    let sketchContext = '';
+    if (req.file?.buffer) {
+      try {
+        console.log(`[ANALYZE] Analyzing sketch image (${req.file.size} bytes)...`);
+        const analysis = await analyzeSketch(req.file.buffer, GEMINI_API_KEY);
+        sketchContext = buildPromptFromAnalysis(analysis);
+        console.log(`[ANALYZE] Extracted: ${analysis.texts?.length || 0} texts, ${analysis.sections?.length || 0} sections`);
+      } catch (err) {
+        console.error(`[ANALYZE ERROR] ${err.message} — falling back to text-only prompt`);
+      }
+    }
+
+    // Build final prompt: branding + sketch analysis + user prompt
+    let prompt = BRANDING_PROMPT;
+    if (sketchContext) {
+      prompt += `\n\nSKETCH ANALYSIS (preserve ALL text and layout from the sketch):\n${sketchContext}`;
+    }
+    if (userPrompt) {
+      prompt += `\n\nADDITIONAL: ${userPrompt}`;
+    }
+
+    console.log(`[GENERATE] device=${deviceType} model=${modelId} hasSketch=${!!sketchContext}`);
 
     // Stage 1: Generate via Stitch
     const screens = await stitch.generateScreen(prompt, deviceType, modelId);
@@ -126,12 +158,13 @@ app.post('/api/generate', upload.single('sketch'), async (req, res) => {
       htmlCode: screen.htmlCode || null,
       generationId: extraction?.id || null,
       localPreviewUrl: extraction ? `/api/result/${extraction.id}` : null,
+      html: extraction?.html || null,
       deployedUrl: deployment.deployed ? deployment.url : null,
       deployAlias: deployment.alias || null,
     });
   } catch (err) {
     console.error('[GENERATE ERROR]', err.message);
-    res.status(500).json({ error: err.message, stage: 'stitch_generation', partial: null });
+    res.status(500).json({ error: 'Generation failed', stage: 'stitch_generation', partial: null });
   }
 });
 
@@ -139,7 +172,13 @@ app.post('/api/generate', upload.single('sketch'), async (req, res) => {
 app.post('/api/generate-variants', async (req, res) => {
   try {
     const { screenIds, prompt } = req.body;
-    console.log(`[VARIANTS] screens=${screenIds?.join(',')}`);
+    if (!Array.isArray(screenIds) || screenIds.length === 0 || screenIds.length > 10) {
+      return res.status(400).json({ error: 'screenIds must be an array of 1-10 IDs' });
+    }
+    if (!screenIds.every(id => typeof id === 'string' && /^[a-zA-Z0-9_-]+$/.test(id))) {
+      return res.status(400).json({ error: 'Invalid screen ID format' });
+    }
+    console.log(`[VARIANTS] screens=${screenIds.join(',')}`);
 
     const screens = await stitch.generateVariants(screenIds, prompt);
 
@@ -162,7 +201,7 @@ app.post('/api/generate-variants', async (req, res) => {
     res.json({ variants });
   } catch (err) {
     console.error('[VARIANTS ERROR]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Variant generation failed' });
   }
 });
 
@@ -187,7 +226,7 @@ app.post('/api/deploy-variant', async (req, res) => {
     res.json({ deployedUrl: deployment.deployed ? deployment.url : null });
   } catch (err) {
     console.error('[DEPLOY VARIANT ERROR]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Deployment failed' });
   }
 });
 
@@ -205,7 +244,7 @@ app.get('/api/screens', async (req, res) => {
     const result = await stitch.listScreens();
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to list screens' });
   }
 });
 
