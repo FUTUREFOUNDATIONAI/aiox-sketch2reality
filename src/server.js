@@ -25,7 +25,7 @@ import { createVercelDeployer } from './vercel-deployer.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Config from env
-const STITCH_API_KEY = process.env.STITCH_API_KEY || 'REDACTED_STITCH_KEY_1';
+const STITCH_API_KEY = process.env.STITCH_API_KEY || 'REDACTED_STITCH_KEY_2';
 const PROJECT_ID = process.env.STITCH_PROJECT_ID || '6851128296893269757';
 const PORT = process.env.PORT || 3777;
 
