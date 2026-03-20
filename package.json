@@ -1,0 +1,14 @@
+{
+  "name": "aiox-sketch2reality",
+  "version": "1.0.0",
+  "description": "Sketch 2 Reality — Transform hand-drawn sketches into branded websites live on stage",
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^2.0.0"
+  }
+}

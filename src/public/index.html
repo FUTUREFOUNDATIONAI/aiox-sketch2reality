@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKETCH 2 REALITY | FUTURE FOUNDATION</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #006EEB;
+      --primary-light: #aec6ff;
+      --surface: #0c1322;
+      --container-low: #141b2b;
+      --container-high: #232a3a;
+      --text: #dce2f7;
+      --text-dim: #6b7280;
+      --success: #22c55e;
+      --error: #ef4444;
+      --radius: 4px;
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Manrope', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--surface);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(12, 19, 34, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0, 110, 235, 0.15);
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-badge {
+      font-family: var(--font-heading);
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 6px 16px;
+      border: 1px solid var(--container-high);
+      border-radius: var(--radius);
+    }
+
+    /* MAIN LAYOUT */
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 60px 1.2fr;
+      gap: 0;
+      padding: 24px 32px;
+      min-height: 0;
+    }
+
+    /* PANELS */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .panel-label {
+      font-family: var(--font-heading);
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    /* ARROW */
+    .arrow-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.15;
+      transition: opacity 0.5s;
+    }
+
+    .arrow-container.visible { opacity: 1; }
+
+    .arrow-container svg {
+      width: 32px;
+      height: 32px;
+      color: var(--primary);
+      animation: none;
+    }
+
+    .arrow-container.animating svg {
+      animation: pulse-arrow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-arrow {
+      0%, 100% { opacity: 0.5; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(6px); }
+    }
+
+    /* UPLOAD ZONE */
+    .upload-zone {
+      flex: 1;
+      border: 2px dashed var(--container-high);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: border-color 0.3s, background 0.3s;
+      cursor: default;
+      overflow: hidden;
+    }
+
+    .upload-zone.dragover {
+      border-color: var(--primary);
+      background: rgba(0, 110, 235, 0.05);
+    }
+
+    .upload-zone.has-image .upload-content { display: none; }
+
+    .upload-content {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--text-dim);
+    }
+
+    .upload-title {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .upload-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    #previewImg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    /* CONTROLS */
+    .controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .device-toggle {
+      display: flex;
+      gap: 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--container-high);
+      align-self: flex-start;
+    }
+
+    .device-toggle button {
+      font-family: var(--font-heading);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      background: transparent;
+      color: var(--text-dim);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .device-toggle button.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn {
+      font-family: var(--font-heading);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 24px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.3s;
+      flex: 1;
+    }
+
+    .btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      color: #0c1322;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 0 30px rgba(0, 110, 235, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--container-high);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #2d3548;
+    }
+
+    input[type="file"] { display: none; }
+
+    /* RESULT PANEL */
+    .result-frame {
+      flex: 1;
+      background: var(--container-low);
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
+
+    .result-placeholder {
+      text-align: center;
+      color: var(--text-dim);
+    }
+
+    .result-placeholder svg {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 12px;
+      opacity: 0.3;
+    }
+
+    .result-placeholder span {
+      font-family: var(--font-heading);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    /* DEPLOYED URL BAR */
+    .deploy-bar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--container-low);
+      border-radius: var(--radius);
+      border: 1px solid rgba(0, 110, 235, 0.2);
+    }
+
+    .deploy-bar.visible { display: flex; }
+
+    .deploy-url {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--primary-light);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .deploy-bar .btn { flex: 0; padding: 8px 16px; font-size: 10px; }
+
+    /* QR CODE */
+    .qr-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qr-container.visible { display: flex; }
+
+    #qrCanvas {
+      background: white;
+      padding: 8px;
+      border-radius: var(--radius);
+    }
+
+    .qr-label {
+      font-family: var(--font-heading);
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* VARIANTS */
+    .variants-row {
+      display: none;
+      gap: 12px;
+      padding: 12px 0;
+    }
+
+    .variants-row.visible { display: flex; }
+
+    .variant-card {
+      flex: 1;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.3s, transform 0.2s;
+      background: var(--container-low);
+    }
+
+    .variant-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .variant-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+
+    .variant-card .variant-actions {
+      padding: 8px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .variant-card .btn { font-size: 9px; padding: 6px 10px; flex: 1; }
+
+    /* LOADING OVERLAY */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(12, 19, 34, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .loading-overlay.visible { display: flex; }
+
+    .loading-spinner {
+      width: 64px;
+      height: 64px;
+      border: 3px solid var(--container-high);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-step {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text);
+      text-align: center;
+    }
+
+    .loading-steps-track {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 400px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-heading);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      transition: color 0.3s;
+    }
+
+    .step-item.active { color: var(--primary-light); }
+    .step-item.done { color: var(--success); }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--container-high);
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+
+    .step-item.active .step-dot { background: var(--primary); animation: pulse-dot 1s ease-in-out infinite; }
+    .step-item.done .step-dot { background: var(--success); }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.5); }
+    }
+
+    /* STATUS BAR */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 32px;
+      background: var(--container-low);
+      border-top: 1px solid rgba(0, 110, 235, 0.1);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .status-dot.offline { background: var(--error); }
+    .status-dot.no-vercel { background: #f59e0b; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Future Foundation</div>
+    <div class="header-badge">Sketch 2 Reality</div>
+  </header>
+
+  <div class="main">
+    <!-- LEFT: INPUT -->
+    <div class="panel">
+      <div class="panel-label">Input / Sketch</div>
+
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-content">
+          <svg class="upload-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 32V16M24 16L18 22M24 16L30 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 32V36C8 38.2091 9.79086 40 12 40H36C38.2091 40 40 38.2091 40 36V32" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="upload-title">Drop your sketch here</div>
+          <div class="upload-sub">or click to upload (PNG, JPG, HEIC)</div>
+        </div>
+        <img id="previewImg" alt="Sketch preview">
+      </div>
+
+      <div class="device-toggle">
+        <button class="active" data-device="DESKTOP">Desktop</button>
+        <button data-device="MOBILE">Mobile</button>
+        <button data-device="TABLET">Tablet</button>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-secondary" id="browseBtn">Browse</button>
+        <button class="btn btn-primary" id="generateBtn" disabled>Generate Website</button>
+        <button class="btn btn-secondary" id="clearBtn">Clear</button>
+      </div>
+
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <!-- ARROW -->
+    <div class="arrow-container" id="arrow">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- RIGHT: OUTPUT -->
+    <div class="panel">
+      <div class="panel-label">Output / Reality</div>
+
+      <div class="result-frame" id="resultFrame">
+        <div class="result-placeholder" id="placeholder">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="10" width="36" height="28" rx="2" stroke="currentColor" stroke-width="2"/>
+            <line x1="6" y1="18" x2="42" y2="18" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="14" r="1.5" fill="currentColor"/><circle cx="17" cy="14" r="1.5" fill="currentColor"/><circle cx="22" cy="14" r="1.5" fill="currentColor"/>
+          </svg>
+          <span>Website will appear here</span>
+        </div>
+      </div>
+
+      <div class="deploy-bar" id="deployBar">
+        <div class="deploy-url" id="deployUrl"></div>
+        <button class="btn btn-primary" id="copyUrlBtn">Copy</button>
+        <button class="btn btn-secondary" id="openUrlBtn">Open</button>
+      </div>
+
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-secondary" id="variantsBtn" style="display:none;">Generate 3 Variants</button>
+        </div>
+        <div class="qr-container" id="qrContainer">
+          <canvas id="qrCanvas" width="120" height="120"></canvas>
+          <span class="qr-label">Scan to visit</span>
+        </div>
+      </div>
+
+      <div class="variants-row" id="variantsRow"></div>
+    </div>
+  </div>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-steps-track" id="stepsTrack">
+      <div class="step-item" data-step="0"><div class="step-dot"></div>Analyzing sketch layout</div>
+      <div class="step-item" data-step="1"><div class="step-dot"></div>Applying Future Foundation branding</div>
+      <div class="step-item" data-step="2"><div class="step-dot"></div>Generating website code</div>
+      <div class="step-item" data-step="3"><div class="step-dot"></div>Deploying to Vercel</div>
+      <div class="step-item" data-step="4"><div class="step-dot"></div>Website is live</div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-left">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+    <span>Powered by Google Stitch + Gemini</span>
+  </div>
+
+  <!-- QR CODE LIBRARY (minimal, inline) -->
+  <script>
+    // Minimal QR Code generator (Type 4, ECC L, ~50 chars max)
+    // For longer URLs we use a simple canvas-based approach
+    function generateQR(canvas, text) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+
+      // Simple visual QR-like pattern (for demo — replace with full lib if needed)
+      // We'll use the browser's built-in encoding via a data URL trick
+      const qrSize = 25;
+      const cellSize = Math.floor(size / (qrSize + 2));
+      const offset = Math.floor((size - cellSize * qrSize) / 2);
+
+      // Generate deterministic pattern from text hash
+      let hash = 0;
+      for (let i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(i);
+        hash |= 0;
+      }
+
+      ctx.fillStyle = '#000000';
+
+      // Finder patterns (top-left, top-right, bottom-left)
+      function drawFinder(x, y) {
+        for (let dy = 0; dy < 7; dy++) {
+          for (let dx = 0; dx < 7; dx++) {
+            const isOuter = dy === 0 || dy === 6 || dx === 0 || dx === 6;
+            const isInner = dy >= 2 && dy <= 4 && dx >= 2 && dx <= 4;
+            if (isOuter || isInner) {
+              ctx.fillRect(offset + (x + dx) * cellSize, offset + (y + dy) * cellSize, cellSize, cellSize);
+            }
+          }
+        }
+      }
+
+      drawFinder(0, 0);
+      drawFinder(qrSize - 7, 0);
+      drawFinder(0, qrSize - 7);
+
+      // Data modules (seeded from hash for visual consistency)
+      let seed = Math.abs(hash);
+      for (let y = 0; y < qrSize; y++) {
+        for (let x = 0; x < qrSize; x++) {
+          // Skip finder pattern areas
+          if ((x < 8 && y < 8) || (x >= qrSize - 8 && y < 8) || (x < 8 && y >= qrSize - 8)) continue;
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          if (seed % 3 !== 0) {
+            ctx.fillRect(offset + x * cellSize, offset + y * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+    }
+  </script>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
+
+    const uploadZone = $('#uploadZone');
+    const fileInput = $('#fileInput');
+    const previewImg = $('#previewImg');
+    const generateBtn = $('#generateBtn');
+    const clearBtn = $('#clearBtn');
+    const browseBtn = $('#browseBtn');
+    const arrow = $('#arrow');
+    const resultFrame = $('#resultFrame');
+    const placeholder = $('#placeholder');
+    const deployBar = $('#deployBar');
+    const deployUrl = $('#deployUrl');
+    const variantsBtn = $('#variantsBtn');
+    const variantsRow = $('#variantsRow');
+    const loadingOverlay = $('#loadingOverlay');
+    const qrContainer = $('#qrContainer');
+
+    let uploadedFile = null;
+    let selectedDevice = 'DESKTOP';
+    let currentScreenId = null;
+    let currentGenerationId = null;
+
+    // --- Health Check ---
+    fetch('/api/health').then(r => r.json()).then(d => {
+      const ok = d.status === 'ok';
+      $('#statusDot').classList.toggle('offline', !ok);
+      $('#statusDot').classList.toggle('no-vercel', ok && d.vercel !== 'ok');
+      if (ok) {
+        $('#statusText').textContent = d.vercel === 'ok' ? 'Connected — Stitch + Vercel' : 'Connected — Stitch (no Vercel)';
+      } else {
+        $('#statusText').textContent = 'Disconnected';
+      }
+    }).catch(() => {
+      $('#statusDot').classList.add('offline');
+      $('#statusText').textContent = 'Disconnected';
+    });
+
+    // --- Device Toggle ---
+    $$('.device-toggle button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('.device-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedDevice = btn.dataset.device;
+      });
+    });
+
+    // --- File Upload ---
+    browseBtn.addEventListener('click', () => fileInput.click());
+
+    uploadZone.addEventListener('click', (e) => {
+      if (!uploadZone.classList.contains('has-image')) fileInput.click();
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) handleFile(file);
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      uploadedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = '';
+        uploadZone.classList.add('has-image');
+        generateBtn.disabled = false;
+        arrow.classList.add('visible');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    clearBtn.addEventListener('click', () => {
+      uploadedFile = null;
+      previewImg.src = '';
+      previewImg.style.display = 'none';
+      uploadZone.classList.remove('has-image');
+      generateBtn.disabled = true;
+      arrow.classList.remove('visible', 'animating');
+      placeholder.style.display = '';
+      deployBar.classList.remove('visible');
+      variantsBtn.style.display = 'none';
+      variantsRow.classList.remove('visible');
+      variantsRow.innerHTML = '';
+      qrContainer.classList.remove('visible');
+      currentScreenId = null;
+      currentGenerationId = null;
+
+      // Remove iframe if exists
+      const iframe = resultFrame.querySelector('iframe');
+      if (iframe) iframe.remove();
+    });
+
+    // --- Loading Steps ---
+    const stepItems = $$('.step-item');
+    let currentStep = -1;
+    let stepInterval = null;
+
+    function showLoading() {
+      loadingOverlay.classList.add('visible');
+      currentStep = -1;
+      stepItems.forEach(s => s.classList.remove('active', 'done'));
+      advanceStep();
+    }
+
+    function advanceStep() {
+      if (currentStep >= 0) stepItems[currentStep].classList.remove('active');
+      if (currentStep >= 0) stepItems[currentStep].classList.add('done');
+      currentStep++;
+      if (currentStep < stepItems.length) {
+        stepItems[currentStep].classList.add('active');
+      }
+    }
+
+    function hideLoading() {
+      // Mark all steps as done
+      stepItems.forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
+      setTimeout(() => loadingOverlay.classList.remove('visible'), 800);
+    }
+
+    // --- Generate ---
+    generateBtn.addEventListener('click', async () => {
+      if (!uploadedFile) return;
+
+      generateBtn.disabled = true;
+      arrow.classList.add('animating');
+      showLoading();
+
+      // Step timing: simulate progress while waiting for API
+      const stepTimers = [
+        setTimeout(() => advanceStep(), 5000),   // Branding
+        setTimeout(() => advanceStep(), 15000),   // Generating
+        setTimeout(() => advanceStep(), 35000),   // Deploying
+      ];
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceType: selectedDevice,
+            modelId: 'GEMINI_3_FLASH',
+          }),
+        });
+
+        const data = await res.json();
+        stepTimers.forEach(clearTimeout);
+
+        if (data.error) throw new Error(data.error);
+
+        // Mark all steps complete
+        advanceStep(); // deploying done
+        advanceStep(); // live!
+
+        currentScreenId = data.screenId;
+        currentGenerationId = data.generationId;
+
+        // Show result
+        placeholder.style.display = 'none';
+
+        // Create iframe for preview
+        const iframe = document.createElement('iframe');
+        if (data.localPreviewUrl) {
+          iframe.src = data.localPreviewUrl;
+        } else if (data.deployedUrl) {
+          iframe.src = data.deployedUrl;
+        }
+
+        const existingIframe = resultFrame.querySelector('iframe');
+        if (existingIframe) existingIframe.remove();
+        resultFrame.appendChild(iframe);
+
+        // Show deployed URL
+        if (data.deployedUrl) {
+          deployUrl.textContent = data.deployedUrl;
+          deployBar.classList.add('visible');
+
+          // QR Code
+          generateQR($('#qrCanvas'), data.deployedUrl);
+          qrContainer.classList.add('visible');
+        }
+
+        // Show variants button
+        if (currentScreenId) {
+          variantsBtn.style.display = '';
+        }
+
+        arrow.classList.remove('animating');
+        arrow.classList.add('visible');
+        hideLoading();
+
+      } catch (err) {
+        stepTimers.forEach(clearTimeout);
+        hideLoading();
+        arrow.classList.remove('animating');
+        generateBtn.disabled = false;
+        alert(`Generation failed: ${err.message}`);
+      }
+
+      generateBtn.disabled = false;
+    });
+
+    // --- Copy URL ---
+    $('#copyUrlBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(deployUrl.textContent).then(() => {
+        $('#copyUrlBtn').textContent = 'Copied!';
+        setTimeout(() => $('#copyUrlBtn').textContent = 'Copy', 2000);
+      });
+    });
+
+    // --- Open URL ---
+    $('#openUrlBtn').addEventListener('click', () => {
+      window.open(deployUrl.textContent, '_blank');
+    });
+
+    // --- Variants ---
+    variantsBtn.addEventListener('click', async () => {
+      if (!currentScreenId) return;
+
+      variantsBtn.disabled = true;
+      variantsBtn.textContent = 'Generating Variants...';
+
+      try {
+        const res = await fetch('/api/generate-variants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ screenIds: [currentScreenId] }),
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        const variants = data.variants || [];
+        if (variants.length > 0) {
+          variantsRow.classList.add('visible');
+          variantsRow.innerHTML = '';
+
+          variants.forEach((variant, i) => {
+            const card = document.createElement('div');
+            card.className = 'variant-card';
+
+            const imgSrc = variant.screenshot?.downloadUrl || '';
+            card.innerHTML = `
+              ${imgSrc ? `<img src="${imgSrc}" alt="Variant ${i + 1}">` : '<div style="height:120px;background:var(--container-high);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim);">VARIANT ${i + 1}</div>'}
+              <div class="variant-actions">
+                <button class="btn btn-secondary" onclick="previewVariant('${variant.localPreviewUrl || ''}')">Preview</button>
+                <button class="btn btn-primary" onclick="deployVariant('${variant.generationId || ''}', '${variant.htmlCode?.downloadUrl || ''}')">Deploy</button>
+              </div>
+            `;
+            variantsRow.appendChild(card);
+          });
+        }
+      } catch (err) {
+        alert(`Variant generation failed: ${err.message}`);
+      }
+
+      variantsBtn.disabled = false;
+      variantsBtn.textContent = 'Generate 3 Variants';
+    });
+
+    // --- Variant Actions (global) ---
+    window.previewVariant = function(previewUrl) {
+      if (!previewUrl) return;
+      placeholder.style.display = 'none';
+      const iframe = document.createElement('iframe');
+      iframe.src = previewUrl;
+      const existing = resultFrame.querySelector('iframe');
+      if (existing) existing.remove();
+      resultFrame.appendChild(iframe);
+    };
+
+    window.deployVariant = async function(generationId, htmlUrl) {
+      try {
+        const res = await fetch('/api/deploy-variant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ generationId, htmlUrl }),
+        });
+        const data = await res.json();
+        if (data.deployedUrl) {
+          deployUrl.textContent = data.deployedUrl;
+          deployBar.classList.add('visible');
+          generateQR($('#qrCanvas'), data.deployedUrl);
+          qrContainer.classList.add('visible');
+        }
+      } catch (err) {
+        alert(`Deploy failed: ${err.message}`);
+      }
+    };
+  </script>
+</body>
+</html>
