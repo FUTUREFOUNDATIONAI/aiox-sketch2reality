@@ -1,7 +1,23 @@
+import { readFileSync } from 'fs';
 import express from 'express';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+
+// Load .env manually (zero deps)
+try {
+  const envPath = join(dirname(fileURLToPath(import.meta.url)), '..', '.env');
+  for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq > 0) {
+      const key = trimmed.slice(0, eq).trim();
+      const val = trimmed.slice(eq + 1).trim();
+      if (!process.env[key]) process.env[key] = val;
+    }
+  }
+} catch {}
 import { createStitchClient } from './stitch-client.js';
 import { extractHtml, getStoredHtml } from './html-extractor.js';
 import { createVercelDeployer } from './vercel-deployer.js';
